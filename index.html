@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Do We Got Game Today?</title>
+<style>
+  html, body { margin: 0; min-height: 100%; }
+  body {
+    background: #FFD60A;
+    font-family: "Helvetica Neue", Arial, sans-serif;
+    display: flex; flex-direction: column; align-items: center;
+    padding: 4vh 0;
+    -webkit-tap-highlight-color: transparent;
+  }
+  h1 {
+    margin: 0 4vw 4vh; color: #000; font-weight: 900; text-align: center;
+    font-size: clamp(28px, 7vw, 72px); letter-spacing: -0.02em;
+  }
+
+  /* Main ball: 90% of page width, capped so it fits on desktop screens */
+  .ball {
+    width: min(90vw, 80vh); aspect-ratio: 1; border-radius: 50%;
+    background: radial-gradient(circle at 32% 28%, #555 0%, #1a1a1a 35%, #000 70%);
+    box-shadow: 0 2vh 4vh rgba(0,0,0,.35);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; user-select: none; outline: none;
+  }
+  .ball:focus-visible { box-shadow: 0 0 0 6px #000, 0 2vh 4vh rgba(0,0,0,.35); }
+
+  /* Inner window: 30% of the ball */
+  .window {
+    position: relative; width: 30%; aspect-ratio: 1; border-radius: 50%;
+    background: #000; border: max(3px, 0.8cqw) solid #444;
+    box-sizing: border-box; container-type: inline-size;
+  }
+  .window svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+
+  /* Text sits in the wide upper part of the downward triangle */
+  .answer {
+    position: absolute; left: 22%; right: 22%; top: 27%; bottom: 38%;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; text-align: center; font-weight: 700; line-height: 1.1;
+    font-size: 8.5cqw; text-transform: uppercase;
+    opacity: 0; transition: opacity .6s ease;
+  }
+  .answer.show { opacity: 1; }
+
+  .wiggle { animation: wiggle .7s ease-in-out; }
+  @keyframes wiggle {
+    0%, 100% { transform: translate(0,0) rotate(0); }
+    15% { transform: translate(-2%, 0) rotate(-4deg); }
+    30% { transform: translate(2%, -1%) rotate(4deg); }
+    45% { transform: translate(-1.5%, 1%) rotate(-3deg); }
+    60% { transform: translate(1.5%, 0) rotate(3deg); }
+    75% { transform: translate(-0.5%, 0) rotate(-1deg); }
+  }
+</style>
+</head>
+<body>
+  <h1>DO WE GOT GAME TODAY?</h1>
+
+  <div class="ball" id="ball" role="button" tabindex="0" aria-label="Shake the magic 8 ball">
+    <div class="window">
+      <!-- Downward triangle inscribed at 95% of the inner circle -->
+      <svg viewBox="-1 -1 2 2" aria-hidden="true">
+        <polygon points="-0.8227,-0.475 0.8227,-0.475 0,0.95" fill="#1E4FD8"/>
+      </svg>
+      <div class="answer" id="answer" aria-live="polite"></div>
+    </div>
+  </div>
+
+<script>
+  var PRIME_ANSWERS = [
+    "Reply hazy, try again", "Ask again later", "Better not tell you now",
+    "Cannot predict now", "Concentrate and ask again", "Don't count on it",
+    "My reply is no", "My sources say no", "Outlook not so good", "Very doubtful"
+  ];
+  var NON_PRIME_ANSWERS = [
+    "It is certain", "It is decidedly so", "Without a doubt", "Yes, definitely",
+    "You may rely on it", "As I see it, yes", "Most likely", "Outlook good",
+    "Yes", "Signs point to yes"
+  ];
+
+  function isPrime(n) {
+    if (n < 2) return false;
+    for (var i = 2; i * i <= n; i++) if (n % i === 0) return false;
+    return true;
+  }
+
+  // Day of month from the visitor's local date; ?day=N overrides for testing
+  function today() {
+    var m = location.search.match(/[?&]day=(\d+)/);
+    return m ? parseInt(m[1], 10) : new Date().getDate();
+  }
+
+  var ball = document.getElementById("ball");
+  var answer = document.getElementById("answer");
+  var busy = false, last = "";
+
+  function shake() {
+    if (busy) return;
+    busy = true;
+    answer.classList.remove("show");
+
+    // Re-check date each shake so the rule holds across midnight
+    var list = isPrime(today()) ? PRIME_ANSWERS : NON_PRIME_ANSWERS;
+    var pick;
+    do { pick = list[Math.floor(Math.random() * list.length)]; } while (pick === last);
+    last = pick;
+
+    ball.classList.remove("wiggle");
+    void ball.offsetWidth; // restart animation
+    ball.classList.add("wiggle");
+
+    setTimeout(function () {
+      answer.textContent = pick;
+      answer.classList.add("show");
+      busy = false;
+    }, 750);
+  }
+
+  ball.addEventListener("click", shake);
+  ball.addEventListener("keydown", function (e) {
+    if (e.key === "Enter" || e.key === " ") { e.preventDefault(); shake(); }
+  });
+</script>
+</body>
+</html>
